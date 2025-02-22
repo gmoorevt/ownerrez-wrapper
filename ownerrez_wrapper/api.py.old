@@ -1,0 +1,123 @@
+"""
+OwnerRez API Wrapper
+"""
+from typing import Dict, List, Optional, Union
+import requests
+from datetime import datetime
+from dateutil.parser import parse
+
+class API:
+    """Main class for interacting with the OwnerRez API"""
+    
+    BASE_URL = "https://api.ownerreservations.com/v2"
+    
+    def __init__(self, api_key: str, api_secret: str):
+        """
+        Initialize the API client
+        
+        Args:
+            api_key (str): Your OwnerRez API key
+            api_secret (str): Your OwnerRez API secret
+        """
+        self.api_key = api_key
+        self.api_secret = api_secret
+        self.session = requests.Session()
+        self.session.auth = (api_key, api_secret)
+    
+    def _make_request(
+        self, 
+        method: str, 
+        endpoint: str, 
+        params: Optional[Dict] = None, 
+        data: Optional[Dict] = None
+    ) -> Union[Dict, List]:
+        """
+        Make a request to the OwnerRez API
+        
+        Args:
+            method (str): HTTP method (GET, POST, PUT, DELETE)
+            endpoint (str): API endpoint
+            params (dict, optional): Query parameters
+            data (dict, optional): Request body
+            
+        Returns:
+            dict or list: API response
+            
+        Raises:
+            requests.exceptions.RequestException: If the request fails
+        """
+        url = f"{self.BASE_URL}/{endpoint.lstrip('/')}"
+        response = self.session.request(method, url, params=params, json=data)
+        response.raise_for_status()
+        return response.json()
+    
+    def get_properties(self, include_inactive: bool = False) -> List[Dict]:
+        """
+        Get a list of properties
+        
+        Args:
+            include_inactive (bool): Whether to include inactive properties
+            
+        Returns:
+            list: List of properties
+        """
+        params = {"includeInactive": include_inactive}
+        return self._make_request("GET", "/properties", params=params)
+    
+    def get_property(self, property_id: Union[str, int]) -> Dict:
+        """
+        Get a specific property
+        
+        Args:
+            property_id (str or int): Property ID
+            
+        Returns:
+            dict: Property details
+        """
+        return self._make_request("GET", f"/properties/{property_id}")
+    
+    def get_bookings(
+        self, 
+        property_id: Optional[Union[str, int]] = None,
+        start_date: Optional[Union[str, datetime]] = None,
+        end_date: Optional[Union[str, datetime]] = None
+    ) -> List[Dict]:
+        """
+        Get a list of bookings
+        
+        Args:
+            property_id (str or int, optional): Filter by property ID
+            start_date (str or datetime, optional): Filter by start date
+            end_date (str or datetime, optional): Filter by end date
+            
+        Returns:
+            list: List of bookings
+        """
+        params = {}
+        
+        if property_id:
+            params["propertyId"] = property_id
+            
+        if start_date:
+            if isinstance(start_date, datetime):
+                start_date = start_date.isoformat()
+            params["startDate"] = start_date
+            
+        if end_date:
+            if isinstance(end_date, datetime):
+                end_date = end_date.isoformat()
+            params["endDate"] = end_date
+            
+        return self._make_request("GET", "/bookings", params=params)
+    
+    def get_booking(self, booking_id: Union[str, int]) -> Dict:
+        """
+        Get a specific booking
+        
+        Args:
+            booking_id (str or int): Booking ID
+            
+        Returns:
+            dict: Booking details
+        """
+        return self._make_request("GET", f"/bookings/{booking_id}")
