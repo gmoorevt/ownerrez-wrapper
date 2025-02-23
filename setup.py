@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="ownerrez-wrapper",
-    version=".1.0",
+    version="0.1.0",
     author="Geody Moore",
     author_email="geody.moore@gmail.com",
     description="A Python wrapper for the OwnerRez API",

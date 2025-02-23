@@ -48,9 +48,14 @@ class API(object):
         params = {'since_utc': since_utc, 'property_id': property_id}
         booking_list = restAdapt.get(endpoint='bookings', ep_params=params)
         
-        for booking in booking_list.data['items']:
-            booking = Booking(**booking)
-            results.append(booking)
+        if isinstance(booking_list.data, list):
+            for booking in booking_list.data:
+                booking = Booking(**booking)
+                results.append(booking)
+        elif isinstance(booking_list.data, dict) and 'items' in booking_list.data:
+            for booking in booking_list.data['items']:
+                booking = Booking(**booking)
+                results.append(booking)
         return results
     
     def getbooking(self, booking_id: int) -> Booking:
@@ -76,9 +81,11 @@ class API(object):
         today = datetime.today()
         bookings = self.getbookings(property_id=property_id, since_utc=today)
         for booking in bookings:
+            if booking.is_block:
+                continue
             # Convert string dates to datetime if they aren't already
             arrival = booking.arrival if isinstance(booking.arrival, datetime) else datetime.strptime(booking.arrival, "%Y-%m-%d")
             departure = booking.departure if isinstance(booking.departure, datetime) else datetime.strptime(booking.departure, "%Y-%m-%d")
-            if arrival <= today and departure >= today:
+            if arrival <= today and departure >= today and booking.status == "active":
                 return True
         return False
